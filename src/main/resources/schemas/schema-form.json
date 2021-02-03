@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "id": "urn:jsonschema:io:gravitee:policy:httpsignature:configuration:HttpSignaturePolicyConfiguration",
+  "properties": {
+    "scheme" : {
+      "title": "Scheme",
+      "description": "Signature Scheme",
+      "type" : "string",
+      "default": "AUTHORIZATION",
+      "enum" : [
+        "AUTHORIZATION",
+        "SIGNATURE"
+      ],
+      "x-schema-form": {
+        "type": "select",
+        "titleMap": {
+          "AUTHORIZATION": "\"Signature\" HTTP Authentication Scheme",
+          "SIGNATURE": "\"Signature\" HTTP Header"
+        }
+      }
+    },
+    "secret": {
+      "title": "Secret",
+      "description": "The secret key used to sign (support EL).",
+      "type": "string"
+    },
+    "algorithms" : {
+      "title": "Supported Algorithms",
+      "description": "A list of supported HMAC digest algorithms.",
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "title": "Algorithm",
+        "default": "HMAC_SHA256",
+        "enum" : [
+          "HMAC_SHA1",
+          "HMAC_SHA256",
+          "HMAC_SHA384",
+          "HMAC_SHA512"
+        ]
+      }
+    },
+    "enforceHeaders" : {
+      "type": "array",
+      "title": "Enforce Headers",
+      "description": "List of headers the consumer must at least use for HTTP signature creation.",
+      "items": {
+        "type": "string",
+        "title": "Header"
+      }
+    },
+    "clockSkew": {
+      "title": "Clock Skew",
+      "default": 30,
+      "description": "Clock Skew in seconds to prevent replay attacks.",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "scheme",
+    "secret"
+  ]
+}
