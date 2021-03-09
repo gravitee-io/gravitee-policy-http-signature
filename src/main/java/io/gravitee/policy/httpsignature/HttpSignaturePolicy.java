@@ -167,7 +167,12 @@ public class HttpSignaturePolicy {
             signature = request.headers().getFirst(HTTP_HEADER_SIGNATURE);
         }
 
-        return (signature != null) ? Signature.fromString(signature) : null;
+        try {
+            return (signature != null) ? Signature.fromString(signature) : null;
+        } catch (Exception ex) {
+            request.metrics().setMessage(ex.getMessage());
+            return null;
+        }
     }
 
 
