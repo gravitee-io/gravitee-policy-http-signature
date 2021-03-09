@@ -18,15 +18,18 @@ package io.gravitee.policy.httpsignature;
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpStatusCode;
+import io.gravitee.common.util.ServiceLoaderHelper;
 import io.gravitee.el.spel.SpelTemplateEngineFactory;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
+import io.gravitee.gateway.api.buffer.BufferFactory;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.httpsignature.configuration.Algorithm;
 import io.gravitee.policy.httpsignature.configuration.HttpSignaturePolicyConfiguration;
 import io.gravitee.policy.httpsignature.configuration.HttpSignatureScheme;
+import io.gravitee.reporter.api.http.Metrics;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,8 +71,11 @@ public class HttpSignaturePolicyTest {
     @Mock
     private HttpSignaturePolicyConfiguration configuration;
 
+    private BufferFactory factory = ServiceLoaderHelper.loadFactory(BufferFactory.class);
+
     @Before
     public void init() {
+        when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
         when(context.getTemplateEngine()).thenReturn(new SpelTemplateEngineFactory().templateEngine());
     }
 
@@ -165,6 +171,23 @@ public class HttpSignaturePolicyTest {
 
         verify(chain, times(1)).doNext(request, response);
         verify(chain, never()).failWith(any(PolicyResult.class));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_invalidFormat() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Signature keyId=gravitee,algorithm=hmac-sha1,signature=HU91saJzo6wdLVtS0%2F4VXINpGXM%3D");
+        headers.set(HttpHeaders.HOST, "gravitee.io");
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(
+                result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
     }
 
     @Test
@@ -277,6 +300,27 @@ public class HttpSignaturePolicyTest {
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
         when(request.path()).thenReturn("/my/api");
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(
+                result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_invalidSignature() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getSecret()).thenReturn("wrong-passphrase");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Signature keyId=\"key-alias\",created=1612796632,algorithm=\"hmac-sha256\",headers=\"(request-target) host\",signature=\"qREl8Za0cQwFlcCKo5HCdfIf1tFp3m5xS3O0L0+3MM4=\"");
+        headers.set(HttpHeaders.HOST, "gravitee.io");
+
+        when(request.headers()).thenReturn(headers);
+        when(request.method()).thenReturn(HttpMethod.GET);
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
 
