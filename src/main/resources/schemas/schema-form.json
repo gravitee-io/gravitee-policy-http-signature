@@ -54,6 +54,12 @@
       "default": 30,
       "description": "Clock Skew in seconds to prevent replay attacks.",
       "type": "integer"
+    },
+    "decodeSignature": {
+      "title": "Decode the signature",
+      "default": false,
+      "description": "Decode the signature before comparing it.",
+      "type": "boolean"
     }
   },
   "required": [

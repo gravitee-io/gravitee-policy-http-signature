@@ -38,6 +38,8 @@ public class HttpSignaturePolicyConfiguration implements PolicyConfiguration {
     // Clock Skew in seconds to prevent replay attacks.
     private long clockSkew = 30;
 
+    private boolean decodeSignature;
+
     public String getSecret() {
         return secret;
     }
@@ -76,5 +78,13 @@ public class HttpSignaturePolicyConfiguration implements PolicyConfiguration {
 
     public void setEnforceHeaders(List<String> enforceHeaders) {
         this.enforceHeaders = enforceHeaders;
+    }
+
+    public boolean isDecodeSignature() {
+        return decodeSignature;
+    }
+
+    public void setDecodeSignature(boolean decodeSignature) {
+        this.decodeSignature = decodeSignature;
     }
 }

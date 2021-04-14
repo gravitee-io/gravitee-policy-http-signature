@@ -28,6 +28,8 @@ import org.tomitribe.auth.signatures.Signature;
 import org.tomitribe.auth.signatures.Signer;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.List;
 
@@ -76,6 +78,8 @@ public class HttpSignaturePolicy {
                     reqSignature.getHeaders(), null, reqSignature.getSignatureCreationTimeMilliseconds(),
                     reqSignature.getSignatureExpirationTimeMilliseconds());
 
+            context.getTemplateEngine().getTemplateContext().setVariable("keyId", reqSignature.getKeyId());
+
             String secret = context.getTemplateEngine().getValue(configuration.getSecret(), String.class);
             final Key key = new SecretKeySpec(secret.getBytes(), reqSignature.getAlgorithm().getJvmName());
             final Signer signer = new Signer(key, signature);
@@ -83,9 +87,13 @@ public class HttpSignaturePolicy {
             final Signature signed = signer.sign(request.method().name().toLowerCase(), request.path(),
                     request.headers().toSingleValueMap());
 
+            String sReqSignature = reqSignature.getSignature();
+            if (configuration.isDecodeSignature()) {
+                sReqSignature = URLDecoder.decode(sReqSignature, StandardCharsets.UTF_8.name());
+            }
 
             // Check signature
-            return signed.getSignature().equals(reqSignature.getSignature());
+            return signed.getSignature().equals(sReqSignature);
         } catch (Exception ex) {
             return false;
         }
