@@ -60,6 +60,12 @@
       "default": false,
       "description": "Decode the signature before comparing it.",
       "type": "boolean"
+    },
+    "strictMode": {
+      "title": "Validate the RFC 2617",
+      "default": true,
+      "description": "Does not accept non quoted strings.",
+      "type": "boolean"
     }
   },
   "required": [

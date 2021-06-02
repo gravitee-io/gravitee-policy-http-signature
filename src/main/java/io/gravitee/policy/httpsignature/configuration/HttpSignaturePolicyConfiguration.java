@@ -40,6 +40,8 @@ public class HttpSignaturePolicyConfiguration implements PolicyConfiguration {
 
     private boolean decodeSignature;
 
+    private boolean strictMode = true;
+
     public String getSecret() {
         return secret;
     }
@@ -86,5 +88,13 @@ public class HttpSignaturePolicyConfiguration implements PolicyConfiguration {
 
     public void setDecodeSignature(boolean decodeSignature) {
         this.decodeSignature = decodeSignature;
+    }
+
+    public boolean isStrictMode() {
+        return strictMode;
+    }
+
+    public void setStrictMode(boolean strictMode) {
+        this.strictMode = strictMode;
     }
 }
