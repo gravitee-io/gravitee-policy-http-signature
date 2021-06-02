@@ -77,7 +77,6 @@ public class HttpSignaturePolicyTest {
 
     @Before
     public void init() {
-        when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
         when(context.getTemplateEngine()).thenReturn(new SpelTemplateEngineFactory().templateEngine());
     }
 
@@ -211,6 +210,28 @@ public class HttpSignaturePolicyTest {
         verify(chain, never()).doNext(request, response);
         verify(chain, times(1)).failWith(argThat(
                 result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldContinueRequestProcessingNonStrict_invalidFormat() throws IOException {
+        when(configuration.isStrictMode()).thenReturn(Boolean.FALSE);
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getSecret()).thenReturn("my-passphrase");
+        when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
+
+        HttpHeaders headers = new HttpHeaders();
+        String sig = generateSignature("my-passphrase", false);
+        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, sig.replaceAll("\"", ""));
+        headers.set(HttpHeaders.HOST, "gravitee.io");
+
+        when(request.headers()).thenReturn(headers);
+        when(request.method()).thenReturn(HttpMethod.GET);
+        when(request.path()).thenReturn("/my/api");
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, times(1)).doNext(request, response);
+        verify(chain, never()).failWith(any(PolicyResult.class));
     }
 
     @Test

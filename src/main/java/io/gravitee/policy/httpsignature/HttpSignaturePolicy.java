@@ -31,7 +31,13 @@ import javax.crypto.spec.SecretKeySpec;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -176,12 +182,43 @@ public class HttpSignaturePolicy {
         }
 
         try {
-            return (signature != null) ? Signature.fromString(signature) : null;
+            if (signature == null) {
+                return null;
+            }
+            if (!configuration.isStrictMode() && !signature.contains("\"")) {
+                signature = convertToStrictSignature(signature);
+            }
+            return Signature.fromString(signature);
         } catch (Exception ex) {
             request.metrics().setMessage(ex.getMessage());
             return null;
         }
     }
 
-
+    /**
+     * Regular expression pattern for fields present in the Authorization field.
+     * Fields value may be double-quoted strings, e.g. algorithm="hs2019"
+     * Some fields may be numerical values without double-quotes, e.g. created=123456
+     * see https://github.com/tomitribe/http-signatures-java/blob/3a84217890d9c7d93d42585c4c9d86225d69f4ff/src/main/java/org/tomitribe/auth/signatures/Signature.java
+     */
+    private static final Pattern RFC_2617_PARAM_NON_STRICT = Pattern.compile("(?<key>\\w+)=((?<stringValue>.*?)($|,))");
+    private String convertToStrictSignature(String signature) {
+        final Matcher matcher = RFC_2617_PARAM_NON_STRICT.matcher(signature);
+        Map<String, String> kv = new HashMap<>();
+        while (matcher.find()) {
+            final String key = matcher.group("key").toLowerCase();
+            String value = matcher.group("stringValue");
+            try {
+                Long.parseLong(value);
+                kv.put(key, value);
+            } catch (NumberFormatException e) {
+                kv.put(key, "\"" + value + "\"");
+            }
+        }
+        String newSignature ="Signature " + kv.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a,b)-> a+","+b)
+                .get();
+        return newSignature;
+    }
 }
