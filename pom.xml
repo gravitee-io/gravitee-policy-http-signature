@@ -23,7 +23,7 @@
 
     <groupId>io.gravitee.policy</groupId>
     <artifactId>gravitee-policy-http-signature</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 
     <name>Gravitee.io APIM - Policy - HTTP Signature</name>
     <description>Description of the HTTP Signature Gravitee Policy</description>
