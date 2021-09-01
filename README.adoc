@@ -1,4 +1,4 @@
-= HTTP Signature
+= HTTP Signature Validator Policy
 
 ifdef::env-github[]
 image:https://ci.gravitee.io/buildStatus/icon?job=gravitee-io/gravitee-policy-http-signature/master["Build status", link="https://ci.gravitee.io/job/gravitee-io/job/gravitee-policy-http-signature/"]
@@ -23,7 +23,15 @@ HTTP Signature is a kind of authentication method which is adding a new level of
 consumer is enforced to send a _signature_ which is used to identify the request temporarily and ensure that the
 request is really coming from the requesting consumer, using a secret key.
 
-NOTE: Current version of the policy does not support *Digest* header.
+The "Signature" authentication scheme is based on the model that the client must authenticate itself with a digital signature produced by either a private asymmetric key (e.g., RSA) or a shared symmetric key (e.g., HMAC).
+
+You can use:
+
+* Authorization header: For example: `Authorization: Signature "keyId="rsa-key-1",created=1630590825,expires=1630590831061,algorithm="hmac-sha256",headers="host",signature="Ib/KOuoDjyZPmLbKPvrnz+wj/kcEFZt5aPCxF4e7tO0="",`
+
+* Signature header: For example, `Signature: "keyId="rsa-key-1",created=1630590825,expires=1630590831061,algorithm="hmac-sha256",headers="host",signature="Ib/KOuoDjyZPmLbKPvrnz+wj/kcEFZt5aPCxF4e7tO0="",`
+
+NOTE: Current version of the policy does not support *Digest*, *(request-target)*, *Host* and *Path* header.
 
 == Configuration
 
@@ -32,8 +40,8 @@ NOTE: Current version of the policy does not support *Digest* header.
 
 .^|scheme
 ^.^|X
-|Signature Scheme (authentication scheme or signature header)
-^.^| authentication
+|Signature Scheme (authorization header or signature header)
+^.^| authorization
 ^.^| -
 
 .^|secret

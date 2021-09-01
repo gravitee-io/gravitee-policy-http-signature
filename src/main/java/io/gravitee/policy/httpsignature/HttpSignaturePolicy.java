@@ -34,10 +34,8 @@ import java.security.Key;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -79,9 +77,14 @@ public class HttpSignaturePolicy {
 
     private boolean verifySignature(final Signature reqSignature, final ExecutionContext context, final Request request) {
         try {
+            Long maxSignatureValidationDuration = null;
+            if (reqSignature.getSignatureCreationTimeMilliseconds() != null && reqSignature.getSignatureExpirationTimeMilliseconds() != null) {
+                maxSignatureValidationDuration = reqSignature.getSignatureExpirationTimeMilliseconds() - reqSignature.getSignatureCreationTimeMilliseconds();
+            }
+
             Signature signature = new Signature(reqSignature.getKeyId(), reqSignature.getSigningAlgorithm(),
                     reqSignature.getAlgorithm(), reqSignature.getParameterSpec(), null,
-                    reqSignature.getHeaders(), null, reqSignature.getSignatureCreationTimeMilliseconds(),
+                    reqSignature.getHeaders(), maxSignatureValidationDuration, reqSignature.getSignatureCreationTimeMilliseconds(),
                     reqSignature.getSignatureExpirationTimeMilliseconds());
 
             context.getTemplateEngine().getTemplateContext().setVariable("keyId", reqSignature.getKeyId());
@@ -90,8 +93,9 @@ public class HttpSignaturePolicy {
             final Key key = new SecretKeySpec(secret.getBytes(), reqSignature.getAlgorithm().getJvmName());
             final Signer signer = new Signer(key, signature);
 
+
             final Signature signed = signer.sign(request.method().name().toLowerCase(), request.path(),
-                    request.headers().toSingleValueMap());
+                    request.headers().toSingleValueMap(), reqSignature.getSignatureCreationTimeMilliseconds(), reqSignature.getSignatureExpirationTimeMilliseconds());
 
             String sReqSignature = reqSignature.getSignature();
             if (configuration.isDecodeSignature()) {
@@ -136,7 +140,10 @@ public class HttpSignaturePolicy {
                 return false;
             }
 
-            return configuration.getEnforceHeaders().stream().noneMatch(sigHeaders::contains);
+            return configuration.getEnforceHeaders().stream()
+                    .map(String::toLowerCase)
+                    .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
+                    .allMatch(sigHeaders::contains);
         }
 
         return true;
@@ -153,13 +160,9 @@ public class HttpSignaturePolicy {
      */
     private boolean validateHeaders(final Signature signature, final Request request) {
         List<String> sigHeaders = signature.getHeaders();
-        if (configuration.getEnforceHeaders() != null && !configuration.getEnforceHeaders().isEmpty()) {
-            return sigHeaders.stream()
-                    .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
-                    .anyMatch(request.headers()::containsKey);
-        }
-
-        return true;
+        return sigHeaders.stream()
+                .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
+                .allMatch(request.headers()::containsKey);
     }
 
     private boolean enforceAlgorithm(final Signature signature) {
