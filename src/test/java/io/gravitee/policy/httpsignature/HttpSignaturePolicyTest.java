@@ -18,18 +18,16 @@ package io.gravitee.policy.httpsignature;
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpStatusCode;
-import io.gravitee.common.util.ServiceLoaderHelper;
 import io.gravitee.el.spel.SpelTemplateEngineFactory;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
-import io.gravitee.gateway.api.buffer.BufferFactory;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.httpsignature.configuration.Algorithm;
 import io.gravitee.policy.httpsignature.configuration.HttpSignaturePolicyConfiguration;
 import io.gravitee.policy.httpsignature.configuration.HttpSignatureScheme;
-import io.gravitee.reporter.api.http.Metrics;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,8 +71,6 @@ public class HttpSignaturePolicyTest {
     @Mock
     private HttpSignaturePolicyConfiguration configuration;
 
-    private BufferFactory factory = ServiceLoaderHelper.loadFactory(BufferFactory.class);
-
     @Before
     public void init() {
         when(context.getTemplateEngine()).thenReturn(new SpelTemplateEngineFactory().templateEngine());
@@ -117,6 +113,33 @@ public class HttpSignaturePolicyTest {
         verify(chain, never()).doNext(request, response);
         verify(chain, times(1)).failWith(argThat(
                 result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void test() throws IOException {
+        final String s = "Signature keyId=\"rsa-key-1\",created=1631088457,expires=1631088517,000,algorithm=\"hmac-sha256\",headers=\"host (created) (expires)\",signature=\"I91PyHGv5DnzZ9pZEn5GWh5sphbdD0L1BtRl+RzkNBs=\"";
+        final Signature signature = new Signature(
+                "keyid",
+                null,
+                org.tomitribe.auth.signatures.Algorithm.HMAC_SHA384, null, null,
+                Arrays.asList("(created)", "(expires)"), 300000000L, 1631088457L,
+                1631088517123L
+        );
+
+        final Key key = new SecretKeySpec("secret".getBytes(), org.tomitribe.auth.signatures.Algorithm.HMAC_SHA384.getJvmName());
+        final Signer signer = new Signer(key, signature);
+
+        final Signature result = signer.sign("GET", "/api", new HashMap<>());
+        final String signingString = signer.createSigningString("GET", "/api", new HashMap<>(), 1631088457L, 1631088517123L);
+
+//        Signature.fromString("Signature keyId=\"keyid\",created=1631089969,expires=1631289972,583,algorithm=\"hmac-sha384\",headers=\"(created) (expires)\",signature=\"mMBK8eDyD0ZbRbP5ob3b4KmbAmXZAZ4MHWOysPHNcQNxVESjEVz+zc1NvED+gjE3\"").toString();
+
+        final String sResult = result.toString();
+
+        final Signature result2 = Signature.fromString(sResult);
+
+        Assert.assertEquals(sResult, result2.toString());
+
     }
 
     @Test
@@ -307,6 +330,24 @@ public class HttpSignaturePolicyTest {
 
         verify(chain, times(1)).doNext(request, response);
         verify(chain, never()).failWith(any(PolicyResult.class));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_validateHeaders() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(
+                result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
     }
 
     @Test
