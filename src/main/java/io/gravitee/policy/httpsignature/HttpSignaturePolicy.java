@@ -15,10 +15,10 @@
  */
 package io.gravitee.policy.httpsignature;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
+import io.gravitee.gateway.api.http.HttpHeaderNames;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.api.annotations.OnRequest;
@@ -177,7 +177,7 @@ public class HttpSignaturePolicy {
         String signature = null;
         if (configuration.getScheme() == HttpSignatureScheme.AUTHORIZATION) {
             // https://tools.ietf.org/id/draft-cavage-http-signatures-12.html#rfc.section.3.1
-            signature = request.headers().getFirst(HttpHeaders.AUTHORIZATION);
+            signature = request.headers().get(HttpHeaderNames.AUTHORIZATION);
 
         } else if (configuration.getScheme() == HttpSignatureScheme.SIGNATURE) {
             // https://tools.ietf.org/id/draft-cavage-http-signatures-12.html#rfc.section.4.1
