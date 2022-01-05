@@ -15,13 +15,14 @@
  */
 package io.gravitee.policy.httpsignature;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.el.spel.SpelTemplateEngineFactory;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
+import io.gravitee.gateway.api.http.HttpHeaderNames;
+import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.httpsignature.configuration.Algorithm;
@@ -89,9 +90,9 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_noSignature_authorizationScheme() {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, "dummy-signature");
         when(request.headers()).thenReturn(headers);
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, "dummy-signature");
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
 
@@ -104,9 +105,9 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_noSignature_signatureScheme() {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.AUTHORIZATION, "Signature: dummy-signature");
         when(request.headers()).thenReturn(headers);
-        headers.set(HttpHeaders.AUTHORIZATION, "Signature: dummy-signature");
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
 
@@ -147,7 +148,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA512));
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create();
         when(request.headers()).thenReturn(headers);
         headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
@@ -164,9 +165,9 @@ public class HttpSignaturePolicyTest {
         when(configuration.getSecret()).thenReturn("my-passphrase");
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.HOST, "gravitee.io");
         headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -185,9 +186,9 @@ public class HttpSignaturePolicyTest {
         when(configuration.isDecodeSignature()).thenReturn(true);
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", true));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", true))
+                .set(HttpHeaderNames.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -204,9 +205,9 @@ public class HttpSignaturePolicyTest {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getSecret()).thenReturn("my-passphrase");
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.HOST, "gravitee.io");
         headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -222,9 +223,9 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_invalidFormat() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "Signature keyId=gravitee,algorithm=hmac-sha1,signature=HU91saJzo6wdLVtS0%2F4VXINpGXM%3D");
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.HOST, "gravitee.io")
+                .set(HttpHeaderNames.AUTHORIZATION, "Signature keyId=gravitee,algorithm=hmac-sha1,signature=HU91saJzo6wdLVtS0%2F4VXINpGXM%3D");
 
         when(request.headers()).thenReturn(headers);
 
@@ -242,10 +243,10 @@ public class HttpSignaturePolicyTest {
         when(configuration.getSecret()).thenReturn("my-passphrase");
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
 
-        HttpHeaders headers = new HttpHeaders();
         String sig = generateSignature("my-passphrase", false);
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, sig.replaceAll("\"", ""));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.HOST, "gravitee.io")
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, sig.replaceAll("\"", ""));
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -263,11 +264,11 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
         when(configuration.getSecret()).thenReturn("my-passphrase");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.HOST, "gravitee.io")
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
         when(request.headers()).thenReturn(headers);
-        headers.set(HttpHeaders.HOST, "gravitee.io");
         when(request.method()).thenReturn(HttpMethod.GET);
         when(request.path()).thenReturn("/my/api");
 
@@ -283,9 +284,9 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList("X-Gravitee-Header"));
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
         when(request.headers()).thenReturn(headers);
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
 
@@ -298,11 +299,11 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_enforceHeaders_withoutHeaderInRequest() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
-        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
         when(request.headers()).thenReturn(headers);
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
 
@@ -315,12 +316,12 @@ public class HttpSignaturePolicyTest {
     public void shouldContinueRequestProcessing_enforceHeaders_withHeaderInRequest() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
-        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("my-passphrase");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
+            .set(HttpHeaderNames.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -336,10 +337,10 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_validateHeaders() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
-        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
         when(request.headers()).thenReturn(headers);
 
@@ -357,9 +358,9 @@ public class HttpSignaturePolicyTest {
         when(configuration.getSecret()).thenReturn("my-passphrase");
         when(configuration.getClockSkew()).thenReturn(30L);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
+                .set(HttpHeaderNames.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -375,12 +376,12 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_invalidSecret() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
-        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("wrong-passphrase");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
+                .set(HttpHeaderNames.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
@@ -397,12 +398,12 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_invalidSignature() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
-        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaders.HOST));
+        when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("wrong-passphrase");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "Signature keyId=\"key-alias\",created=1612796632,algorithm=\"hmac-sha256\",headers=\"(request-target) host\",signature=\"qREl8Za0cQwFlcCKo5HCdfIf1tFp3m5xS3O0L0+3MM4=\"");
-        headers.set(HttpHeaders.HOST, "gravitee.io");
+        HttpHeaders headers = HttpHeaders.create()
+                .set(HttpHeaderNames.AUTHORIZATION, "Signature keyId=\"key-alias\",created=1612796632,algorithm=\"hmac-sha256\",headers=\"(request-target) host\",signature=\"qREl8Za0cQwFlcCKo5HCdfIf1tFp3m5xS3O0L0+3MM4=\"")
+                .set(HttpHeaderNames.HOST, "gravitee.io");
 
         when(request.headers()).thenReturn(headers);
         when(request.method()).thenReturn(HttpMethod.GET);
