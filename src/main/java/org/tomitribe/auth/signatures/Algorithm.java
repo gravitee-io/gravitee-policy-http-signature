@@ -15,15 +15,14 @@
  */
 package org.tomitribe.auth.signatures;
 
-import javax.crypto.Mac;
 import java.util.HashMap;
 import java.util.Map;
+import javax.crypto.Mac;
 
 /**
  * The cryptographic algorithms for the HTTP signature.
  */
 public enum Algorithm {
-
     // hmac
     HMAC_SHA1("HmacSHA1", "hmac-sha1", Mac.class),
     HMAC_SHA224("HmacSHA224", "hmac-sha224", Mac.class),
@@ -77,8 +76,7 @@ public enum Algorithm {
     // The signature is the raw concatenation of r and s.
     ECDSA_SHA256_P1363("SHA256withECDSAinP1363Format", "ecdsa-sha256-p1363", java.security.Signature.class),
     ECDSA_SHA384_P1363("SHA384withECDSAinP1363Format", "ecdsa-sha384-p1363", java.security.Signature.class),
-    ECDSA_SHA512_P1363("SHA512withECDSAinP1363Format", "ecdsa-sha512-p1363", java.security.Signature.class),
-    ;
+    ECDSA_SHA512_P1363("SHA512withECDSAinP1363Format", "ecdsa-sha512-p1363", java.security.Signature.class);
 
     private static final Map<String, Algorithm> aliases = new HashMap<String, Algorithm>();
 
@@ -131,7 +129,6 @@ public enum Algorithm {
     private static String normalize(final String algorithm) {
         return algorithm.replaceAll("[^A-Za-z0-9]+", "").toLowerCase();
     }
-
 
     @Override
     public String toString() {

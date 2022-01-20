@@ -23,7 +23,6 @@ import java.util.Set;
  * @see <a href="https://www.ietf.org/id/draft-ietf-httpbis-message-signatures-00.html">https://www.ietf.org/id/draft-ietf-httpbis-message-signatures-00.html</a>
  */
 public enum SigningAlgorithm {
-
     /**
      * The actual cryptographic algorithm is derived from metadata associated
      * with keyId.
@@ -40,8 +39,7 @@ public enum SigningAlgorithm {
     RSA_SHA1("rsa-sha1", new HashSet<Algorithm>(Arrays.asList(Algorithm.RSA_SHA1))),
     RSA_SHA256("rsa-sha256", new HashSet<Algorithm>(Arrays.asList(Algorithm.RSA_SHA256))),
     ECDSA_SHA256("ecdsa-sha256", new HashSet<Algorithm>(Arrays.asList(Algorithm.ECDSA_SHA256))),
-    HMAC_SHA256("hmac-sha256", new HashSet<Algorithm>(Arrays.asList(Algorithm.HMAC_SHA256))),
-    ;
+    HMAC_SHA256("hmac-sha256", new HashSet<Algorithm>(Arrays.asList(Algorithm.HMAC_SHA256)));
 
     private static final Map<String, SigningAlgorithm> aliases = new HashMap<String, SigningAlgorithm>();
 

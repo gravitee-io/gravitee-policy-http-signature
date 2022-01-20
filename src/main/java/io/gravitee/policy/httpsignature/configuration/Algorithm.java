@@ -20,7 +20,6 @@ package io.gravitee.policy.httpsignature.configuration;
  * @author GraviteeSource Team
  */
 public enum Algorithm {
-
     HMAC_SHA1(org.tomitribe.auth.signatures.Algorithm.HMAC_SHA1),
     HMAC_SHA256(org.tomitribe.auth.signatures.Algorithm.HMAC_SHA256),
     HMAC_SHA384(org.tomitribe.auth.signatures.Algorithm.HMAC_SHA384),

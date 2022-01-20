@@ -1,6 +1,5 @@
 package org.tomitribe.auth.signatures;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import java.util.List;
  */
 public enum PEM {
     ;
+
     private static final String BEGIN_MARKER = "-----BEGIN ";
 
     /**
@@ -52,7 +52,6 @@ public enum PEM {
      *              if an IO exception occurs while reading the stream
      */
     public static PrivateKey readPrivateKey(final InputStream is) throws InvalidKeySpecException, IOException {
-
         final List<PEMObject> objects = readPEMObjects(is);
         for (final PEMObject object : objects) {
             switch (object.getPEMObjectType()) {
@@ -88,19 +87,14 @@ public enum PEM {
      *             if an IO exception occurs while reading the stream
      */
     public static PublicKey readPublicKey(final InputStream is) throws InvalidKeySpecException, IOException {
-
         for (final PEMObject object : readPEMObjects(is)) {
-
             switch (object.getPEMObjectType()) {
-
                 case PUBLIC_KEY_X509:
-
                     try {
                         return RSA.publicKeyFrom(object.getDerBytes());
                     } catch (final InvalidKeySpecException e) {
                         return EC.publicKeyFrom(object.getDerBytes());
                     }
-
                 default:
                     break;
             }
@@ -116,7 +110,6 @@ public enum PEM {
      * are embedded in the same PEM file.
      */
     private static List<PEMObject> readPEMObjects(final InputStream is) throws IOException {
-
         final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         try {
             final List<PEMObject> pemContents = new ArrayList<PEMObject>();
@@ -134,7 +127,8 @@ public enum PEM {
                 if (readingContent) {
                     if (line.contains(endMarker)) {
                         pemContents.add( // completed reading one PEM object
-                                new PEMObject(beginMarker, Base64.decodeBase64(sb.toString().getBytes("UTF-8"))));
+                            new PEMObject(beginMarker, Base64.decodeBase64(sb.toString().getBytes("UTF-8")))
+                        );
                         readingContent = false;
                     } else {
                         sb.append(line.trim());
@@ -165,6 +159,7 @@ public enum PEM {
      * and ending marker.
      */
     static class PEMObject {
+
         private final String beginMarker;
         private final byte[] derBytes;
 
@@ -198,6 +193,7 @@ public enum PEM {
         PRIVATE_KEY_PKCS8("-----BEGIN PRIVATE KEY-----"),
         PUBLIC_KEY_X509("-----BEGIN PUBLIC KEY-----"),
         CERTIFICATE_X509("-----BEGIN CERTIFICATE-----");
+
         private final String beginMarker;
 
         public String getBeginMarker() {

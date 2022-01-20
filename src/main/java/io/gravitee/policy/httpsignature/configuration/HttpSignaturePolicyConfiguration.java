@@ -16,7 +16,6 @@
 package io.gravitee.policy.httpsignature.configuration;
 
 import io.gravitee.policy.api.PolicyConfiguration;
-
 import java.util.List;
 
 /**

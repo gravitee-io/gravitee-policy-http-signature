@@ -20,7 +20,6 @@ package io.gravitee.policy.httpsignature.configuration;
  * @author GraviteeSource Team
  */
 public enum HttpSignatureScheme {
-
     AUTHORIZATION,
-    SIGNATURE
+    SIGNATURE,
 }
