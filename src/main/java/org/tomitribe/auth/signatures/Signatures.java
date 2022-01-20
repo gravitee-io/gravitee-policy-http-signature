@@ -18,7 +18,12 @@ public enum Signatures {
      * @param uri The HTTP request URI.
      * @param headers A map of header names to header values.
      */
-    public static String createSigningString(final List<String> required, final String method, final String uri, final Map<String, String> headers) {
+    public static String createSigningString(
+        final List<String> required,
+        final String method,
+        final String uri,
+        final Map<String, String> headers
+    ) {
         return createSigningString(required, method, uri, headers, null, null);
     }
 
@@ -38,8 +43,14 @@ public enum Signatures {
      * @param signatureCreationTime The signature creation time in milliseconds since the epoch.
      * @param signatureExpiryTime The signature expiration time in milliseconds since the epoch.
      */
-    public static String createSigningString(final List<String> required, String method, final String uri, Map<String, String> headers,
-                                             final Long signatureCreationTime, final Long signatureExpiryTime) {
+    public static String createSigningString(
+        final List<String> required,
+        String method,
+        final String uri,
+        Map<String, String> headers,
+        final Long signatureCreationTime,
+        final Long signatureExpiryTime
+    ) {
         headers = lowercase(headers);
 
         final List<String> list = new ArrayList<String>(required.size());

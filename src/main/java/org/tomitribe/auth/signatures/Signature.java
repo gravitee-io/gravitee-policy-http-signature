@@ -118,8 +118,9 @@ public class Signature {
      * Some fields may be numerical values without double-quotes, e.g. created=123456
      * Fields that are numerical values with digits are formatted regarding the current Locale. The char used can be a "." (dot) or a "," coma.
      */
-    private static final Pattern RFC_2617_PARAM = Pattern
-            .compile("(?<key>\\w+)=((\"(?<stringValue>[^\"]*)\")|(?<numberValue>\\d+[.,]?\\d*))");
+    private static final Pattern RFC_2617_PARAM = Pattern.compile(
+        "(?<key>\\w+)=((\"(?<stringValue>[^\"]*)\")|(?<numberValue>\\d+[.,]?\\d*))"
+    );
 
     /**
      * The maximum time skew between the client and the server.
@@ -137,7 +138,13 @@ public class Signature {
      * @param parameterSpec optional cryptographic parameters for the signature.
      * @param headers The list of HTTP headers that will be used in the signature.
      */
-    public Signature(final String keyId, final String signingAlgorithm, final String algorithm, final AlgorithmParameterSpec parameterSpec, final List<String> headers) {
+    public Signature(
+        final String keyId,
+        final String signingAlgorithm,
+        final String algorithm,
+        final AlgorithmParameterSpec parameterSpec,
+        final List<String> headers
+    ) {
         this(keyId, getSigningAlgorithm(signingAlgorithm), getAlgorithm(algorithm), parameterSpec, null, headers);
     }
 
@@ -171,37 +178,65 @@ public class Signature {
         this(keyId, null, algorithm, null, signature, headers, null, null, null);
     }
 
-    public Signature(final String keyId, final String signingAlgorithm, final String algorithm,
-                     final AlgorithmParameterSpec parameterSpec, final String signature, final List<String> headers) {
+    public Signature(
+        final String keyId,
+        final String signingAlgorithm,
+        final String algorithm,
+        final AlgorithmParameterSpec parameterSpec,
+        final String signature,
+        final List<String> headers
+    ) {
         this(keyId, getSigningAlgorithm(signingAlgorithm), getAlgorithm(algorithm), parameterSpec, signature, headers);
     }
 
-    public Signature(final String keyId, final SigningAlgorithm signingAlgorithm, final Algorithm algorithm,
-                     final AlgorithmParameterSpec parameterSpec, final String signature, final List<String> headers) {
+    public Signature(
+        final String keyId,
+        final SigningAlgorithm signingAlgorithm,
+        final Algorithm algorithm,
+        final AlgorithmParameterSpec parameterSpec,
+        final String signature,
+        final List<String> headers
+    ) {
         this(keyId, signingAlgorithm, algorithm, parameterSpec, signature, headers, null);
     }
 
-    public Signature(final String keyId, final SigningAlgorithm signingAlgorithm, final Algorithm algorithm,
-                     final AlgorithmParameterSpec parameterSpec, final String signature,
-                     final List<String> headers, final Long maxSignatureValidityDuration) {
+    public Signature(
+        final String keyId,
+        final SigningAlgorithm signingAlgorithm,
+        final Algorithm algorithm,
+        final AlgorithmParameterSpec parameterSpec,
+        final String signature,
+        final List<String> headers,
+        final Long maxSignatureValidityDuration
+    ) {
         this(keyId, signingAlgorithm, algorithm, parameterSpec, signature, headers, maxSignatureValidityDuration, null, null);
     }
 
-    public Signature(final String keyId, final SigningAlgorithm signingAlgorithm, final Algorithm algorithm,
-                     final AlgorithmParameterSpec parameterSpec, final String signature,
-                     final List<String> headers, final Long maxSignatureValidityDuration,
-                     final Long signatureCreatedTime, final Long signatureExpiresTime) {
+    public Signature(
+        final String keyId,
+        final SigningAlgorithm signingAlgorithm,
+        final Algorithm algorithm,
+        final AlgorithmParameterSpec parameterSpec,
+        final String signature,
+        final List<String> headers,
+        final Long maxSignatureValidityDuration,
+        final Long signatureCreatedTime,
+        final Long signatureExpiresTime
+    ) {
         if (keyId == null || keyId.trim().isEmpty()) {
             throw new IllegalArgumentException("keyId is required.");
         }
         if (algorithm == null) {
             throw new IllegalArgumentException("algorithm is required.");
         }
-        if (signingAlgorithm != null &&
-                signingAlgorithm.getSupportedAlgorithms() != null &&
-                !signingAlgorithm.getSupportedAlgorithms().contains(algorithm)) {
-            throw new IllegalArgumentException("Signing algorithm " + signingAlgorithm.getAlgorithmName() +
-                    " is not compatible with " + algorithm.getPortableName());
+        if (
+            signingAlgorithm != null &&
+            signingAlgorithm.getSupportedAlgorithms() != null &&
+            !signingAlgorithm.getSupportedAlgorithms().contains(algorithm)
+        ) {
+            throw new IllegalArgumentException(
+                "Signing algorithm " + signingAlgorithm.getAlgorithmName() + " is not compatible with " + algorithm.getPortableName()
+            );
         }
 
         this.keyId = keyId;
@@ -363,6 +398,7 @@ public class Signature {
          * A HTTP signature field value in the authorization header.
          */
         class FieldValue {
+
             /**
              * The field value. It may be a string or number.
              */
@@ -413,7 +449,6 @@ public class Signature {
                 if (!isNumber()) return null;
                 return ((Number) value).doubleValue();
             }
-
         }
 
         try {
@@ -506,10 +541,19 @@ public class Signature {
                 parsedAlgorithm = algorithm;
             }
 
-            final Signature s = new Signature(keyid, parsedSigningAlgorithm, parsedAlgorithm, null, signature, headers, null, created, expires);
+            final Signature s = new Signature(
+                keyid,
+                parsedSigningAlgorithm,
+                parsedAlgorithm,
+                null,
+                signature,
+                headers,
+                null,
+                created,
+                expires
+            );
             s.verifySignatureValidityDates();
             return s;
-
         } catch (final AuthenticationException e) {
             throw e;
         } catch (final Throwable e) {
@@ -520,7 +564,6 @@ public class Signature {
     public static Signature fromString(String authorization) {
         return fromString(authorization, null);
     }
-
 
     private static String normalize(String authorization) {
         final String start = "signature ";
@@ -544,7 +587,7 @@ public class Signature {
     public String toParamString() {
         return toString(null);
     }
-    
+
     public String toString(final String prefix) {
         final Object alg;
         if (SigningAlgorithm.HS2019.equals(signingAlgorithm)) {
@@ -556,12 +599,30 @@ public class Signature {
         } else {
             alg = algorithm;
         }
-        return  (prefix != null ? prefix + " " : "") +
-                "keyId=\"" + keyId + '\"' +
-                (signatureCreatedTime != null && headers.contains("(created)") ? String.format(",created=%d", signatureCreatedTime / 1000L) : "") +
-                (signatureExpiresTime != null && headers.contains("(expires)") ? String.format(",expires=%.3f", signatureExpiresTime / 1000.0) : "") +
-                ",algorithm=\"" + alg + '\"' +
-                ",headers=\"" + Join.join(" ", headers) + '\"' +
-                ",signature=\"" + signature + '\"';
+        return (
+            (prefix != null ? prefix + " " : "") +
+            "keyId=\"" +
+            keyId +
+            '\"' +
+            (
+                signatureCreatedTime != null && headers.contains("(created)")
+                    ? String.format(",created=%d", signatureCreatedTime / 1000L)
+                    : ""
+            ) +
+            (
+                signatureExpiresTime != null && headers.contains("(expires)")
+                    ? String.format(",expires=%.3f", signatureExpiresTime / 1000.0)
+                    : ""
+            ) +
+            ",algorithm=\"" +
+            alg +
+            '\"' +
+            ",headers=\"" +
+            Join.join(" ", headers) +
+            '\"' +
+            ",signature=\"" +
+            signature +
+            '\"'
+        );
     }
 }

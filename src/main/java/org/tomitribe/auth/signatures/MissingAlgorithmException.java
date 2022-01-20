@@ -1,4 +1,3 @@
 package org.tomitribe.auth.signatures;
 
-public class MissingAlgorithmException extends AuthenticationException {
-}
+public class MissingAlgorithmException extends AuthenticationException {}

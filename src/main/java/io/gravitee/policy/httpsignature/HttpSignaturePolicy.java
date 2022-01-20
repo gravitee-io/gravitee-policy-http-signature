@@ -24,10 +24,6 @@ import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.api.annotations.OnRequest;
 import io.gravitee.policy.httpsignature.configuration.HttpSignaturePolicyConfiguration;
 import io.gravitee.policy.httpsignature.configuration.HttpSignatureScheme;
-import org.tomitribe.auth.signatures.Signature;
-import org.tomitribe.auth.signatures.Signer;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -36,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.crypto.spec.SecretKeySpec;
+import org.tomitribe.auth.signatures.Signature;
+import org.tomitribe.auth.signatures.Signer;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -61,15 +60,17 @@ public class HttpSignaturePolicy {
         // Extract the signature according to the scheme
         final Signature signature = extractSignature(request);
 
-        if (signature == null ||
-                ! enforceAlgorithm(signature) ||
-                ! enforceHeaders(signature) ||
-                ! validateHeaders(signature, request) ||
-                ! verifySignatureValidityDates(signature) ||
-                ! verifySignature(signature, context, request)) {
+        if (
+            signature == null ||
+            !enforceAlgorithm(signature) ||
+            !enforceHeaders(signature) ||
+            !validateHeaders(signature, request) ||
+            !verifySignatureValidityDates(signature) ||
+            !verifySignature(signature, context, request)
+        ) {
             chain.failWith(PolicyResult.failure(HTTP_SIGNATURE_INVALID_SIGNATURE, 401, "Invalid HTTP Signature"));
 
-            return ;
+            return;
         }
 
         chain.doNext(request, response);
@@ -78,14 +79,24 @@ public class HttpSignaturePolicy {
     private boolean verifySignature(final Signature reqSignature, final ExecutionContext context, final Request request) {
         try {
             Long maxSignatureValidationDuration = null;
-            if (reqSignature.getSignatureCreationTimeMilliseconds() != null && reqSignature.getSignatureExpirationTimeMilliseconds() != null) {
-                maxSignatureValidationDuration = reqSignature.getSignatureExpirationTimeMilliseconds() - reqSignature.getSignatureCreationTimeMilliseconds();
+            if (
+                reqSignature.getSignatureCreationTimeMilliseconds() != null && reqSignature.getSignatureExpirationTimeMilliseconds() != null
+            ) {
+                maxSignatureValidationDuration =
+                    reqSignature.getSignatureExpirationTimeMilliseconds() - reqSignature.getSignatureCreationTimeMilliseconds();
             }
 
-            Signature signature = new Signature(reqSignature.getKeyId(), reqSignature.getSigningAlgorithm(),
-                    reqSignature.getAlgorithm(), reqSignature.getParameterSpec(), null,
-                    reqSignature.getHeaders(), maxSignatureValidationDuration, reqSignature.getSignatureCreationTimeMilliseconds(),
-                    reqSignature.getSignatureExpirationTimeMilliseconds());
+            Signature signature = new Signature(
+                reqSignature.getKeyId(),
+                reqSignature.getSigningAlgorithm(),
+                reqSignature.getAlgorithm(),
+                reqSignature.getParameterSpec(),
+                null,
+                reqSignature.getHeaders(),
+                maxSignatureValidationDuration,
+                reqSignature.getSignatureCreationTimeMilliseconds(),
+                reqSignature.getSignatureExpirationTimeMilliseconds()
+            );
 
             context.getTemplateEngine().getTemplateContext().setVariable("keyId", reqSignature.getKeyId());
 
@@ -93,9 +104,13 @@ public class HttpSignaturePolicy {
             final Key key = new SecretKeySpec(secret.getBytes(), reqSignature.getAlgorithm().getJvmName());
             final Signer signer = new Signer(key, signature);
 
-
-            final Signature signed = signer.sign(request.method().name().toLowerCase(), request.path(),
-                    request.headers().toSingleValueMap(), reqSignature.getSignatureCreationTimeMilliseconds(), reqSignature.getSignatureExpirationTimeMilliseconds());
+            final Signature signed = signer.sign(
+                request.method().name().toLowerCase(),
+                request.path(),
+                request.headers().toSingleValueMap(),
+                reqSignature.getSignatureCreationTimeMilliseconds(),
+                reqSignature.getSignatureExpirationTimeMilliseconds()
+            );
 
             String sReqSignature = reqSignature.getSignature();
             if (configuration.isDecodeSignature()) {
@@ -119,12 +134,17 @@ public class HttpSignaturePolicy {
      */
     private boolean verifySignatureValidityDates(Signature signature) {
         if (configuration.getClockSkew() > 0) {
-            if (signature.getSignatureCreationTimeMilliseconds() != null &&
-                    signature.getSignatureCreationTimeMilliseconds() > System.currentTimeMillis() + (configuration.getClockSkew() * 1_000)) {
+            if (
+                signature.getSignatureCreationTimeMilliseconds() != null &&
+                signature.getSignatureCreationTimeMilliseconds() > System.currentTimeMillis() + (configuration.getClockSkew() * 1_000)
+            ) {
                 return false;
             }
 
-            if (signature.getSignatureExpirationTimeMilliseconds() != null && signature.getSignatureExpirationTimeMilliseconds() < System.currentTimeMillis()) {
+            if (
+                signature.getSignatureExpirationTimeMilliseconds() != null &&
+                signature.getSignatureExpirationTimeMilliseconds() < System.currentTimeMillis()
+            ) {
                 return false;
             }
         }
@@ -140,10 +160,12 @@ public class HttpSignaturePolicy {
                 return false;
             }
 
-            return configuration.getEnforceHeaders().stream()
-                    .map(String::toLowerCase)
-                    .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
-                    .allMatch(sigHeaders::contains);
+            return configuration
+                .getEnforceHeaders()
+                .stream()
+                .map(String::toLowerCase)
+                .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
+                .allMatch(sigHeaders::contains);
         }
 
         return true;
@@ -160,9 +182,10 @@ public class HttpSignaturePolicy {
      */
     private boolean validateHeaders(final Signature signature, final Request request) {
         List<String> sigHeaders = signature.getHeaders();
-        return sigHeaders.stream()
-                .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
-                .allMatch(request.headers()::containsKey);
+        return sigHeaders
+            .stream()
+            .filter(header -> !header.startsWith("(") && !header.endsWith(")"))
+            .allMatch(request.headers()::containsKey);
     }
 
     private boolean enforceAlgorithm(final Signature signature) {
@@ -178,7 +201,6 @@ public class HttpSignaturePolicy {
         if (configuration.getScheme() == HttpSignatureScheme.AUTHORIZATION) {
             // https://tools.ietf.org/id/draft-cavage-http-signatures-12.html#rfc.section.3.1
             signature = request.headers().get(HttpHeaderNames.AUTHORIZATION);
-
         } else if (configuration.getScheme() == HttpSignatureScheme.SIGNATURE) {
             // https://tools.ietf.org/id/draft-cavage-http-signatures-12.html#rfc.section.4.1
             signature = request.headers().getFirst(HTTP_HEADER_SIGNATURE);
@@ -205,6 +227,7 @@ public class HttpSignaturePolicy {
      * see https://github.com/tomitribe/http-signatures-java/blob/3a84217890d9c7d93d42585c4c9d86225d69f4ff/src/main/java/org/tomitribe/auth/signatures/Signature.java
      */
     private static final Pattern RFC_2617_PARAM_NON_STRICT = Pattern.compile("(?<key>\\w+)=((?<stringValue>.*?)($|,))");
+
     private String convertToStrictSignature(String signature) {
         final Matcher matcher = RFC_2617_PARAM_NON_STRICT.matcher(signature);
         Map<String, String> kv = new HashMap<>();
@@ -218,10 +241,8 @@ public class HttpSignaturePolicy {
                 kv.put(key, "\"" + value + "\"");
             }
         }
-        String newSignature ="Signature " + kv.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .reduce((a,b)-> a+","+b)
-                .get();
+        String newSignature =
+            "Signature " + kv.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).reduce((a, b) -> a + "," + b).get();
         return newSignature;
     }
 }

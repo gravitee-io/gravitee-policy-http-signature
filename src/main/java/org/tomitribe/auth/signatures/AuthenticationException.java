@@ -2,8 +2,7 @@ package org.tomitribe.auth.signatures;
 
 public class AuthenticationException extends RuntimeException {
 
-    public AuthenticationException() {
-    }
+    public AuthenticationException() {}
 
     public AuthenticationException(final String message) {
         super(message);
