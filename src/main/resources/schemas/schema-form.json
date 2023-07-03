@@ -1,6 +1,7 @@
 {
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "id": "urn:jsonschema:io:gravitee:policy:httpsignature:configuration:HttpSignaturePolicyConfiguration",
+  "additionalProperties": false,
   "properties": {
     "scheme" : {
       "title": "Scheme",
@@ -16,6 +17,12 @@
         "titleMap": {
           "AUTHORIZATION": "\"Signature\" HTTP Authentication Scheme",
           "SIGNATURE": "\"Signature\" HTTP Header"
+        }
+      },
+      "gioConfig": {
+        "banner": {
+          "title": "Scheme",
+          "text": "<ul><li>AUTHORIZATION: \"Signature\" HTTP Authentication Scheme</li><li>SIGNATURE: \"Signature\" HTTP Header</li></ul>"
         }
       }
     },
