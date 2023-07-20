@@ -40,9 +40,7 @@ NOTE: Current version of the policy does not support *Digest*, *(request-target)
 
 |===
 |Plugin version | APIM version
-
-|1.5 and upper               | 3.15.x to latest
-|Up to 1.4                   | Up to 3.14.x
+|1.x            | All supported versions
 |===
 
 
