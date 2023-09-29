@@ -82,8 +82,8 @@ public enum Signatures {
                 if (signatureExpiryTime == null) {
                     throw new InvalidExpiresFieldException("(expires) field requested but signature expiration time is not set");
                 }
-                final double expires = signatureExpiryTime / 1000.0;
-                list.add(key + ": " + String.format("%.3f", expires));
+                final int expires = (int) (signatureExpiryTime / 1000);
+                list.add(key + ": " + expires);
             } else {
                 final String value = headers.get(key);
                 if (value == null) throw new MissingRequiredHeaderException(key);
