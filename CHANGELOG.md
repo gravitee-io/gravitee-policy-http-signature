@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.6.1...1.7.0) (2023-12-19)
+
+
+### Features
+
+* enable policy on REQUEST phase for message APIs ([a50904c](https://github.com/gravitee-io/gravitee-policy-http-signature/commit/a50904cbcebff790dbb28d46fb5481e45db4be2a)), closes [gravitee-io/issues#9430](https://github.com/gravitee-io/issues/issues/9430)
+
 ## [1.6.1](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.6.0...1.6.1) (2023-07-20)
 
 
