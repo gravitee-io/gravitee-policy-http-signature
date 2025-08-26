@@ -29,7 +29,10 @@
     "secret": {
       "title": "Secret",
       "description": "The secret key used to sign (support EL).",
-      "type": "string"
+      "type": "string",
+      "gioConfig": {
+          "el": true
+      }
     },
     "algorithms" : {
       "title": "Supported Algorithms",
