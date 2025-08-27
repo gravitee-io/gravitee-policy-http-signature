@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.7.0...1.8.0) (2025-08-27)
+
+
+### Features
+
+* update form to provide el metadata ([267f939](https://github.com/gravitee-io/gravitee-policy-http-signature/commit/267f9392dedaba31b00beca488d0a923a49d2d23))
+
 # [1.7.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.6.1...1.7.0) (2023-12-19)
 
 
