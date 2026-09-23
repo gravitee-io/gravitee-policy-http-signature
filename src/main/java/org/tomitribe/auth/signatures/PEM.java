@@ -126,7 +126,8 @@ public enum PEM {
             while ((line = reader.readLine()) != null) {
                 if (readingContent) {
                     if (line.contains(endMarker)) {
-                        pemContents.add( // completed reading one PEM object
+                        pemContents.add(
+                            // completed reading one PEM object
                             new PEMObject(beginMarker, Base64.decodeBase64(sb.toString().getBytes("UTF-8")))
                         );
                         readingContent = false;
