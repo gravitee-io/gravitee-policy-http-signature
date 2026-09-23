@@ -1,3 +1,16 @@
+# [2.0.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.8.0...2.0.0) (2026-09-23)
+
+
+* chore(deps)!: move to the gravitee orb 5.16.0 and parent 23.5.0 ([31c5447](https://github.com/gravitee-io/gravitee-policy-http-signature/commit/31c544794385bc37421503c11bcf1d82537a8ea0))
+
+
+### BREAKING CHANGES
+
+* the artifact is now compiled for Java 21, up from Java 11, and
+requires a Java 21 runtime or later.
+
+https://gravitee.atlassian.net/browse/BX-403
+
 # [1.8.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.7.0...1.8.0) (2025-08-27)
 
 
