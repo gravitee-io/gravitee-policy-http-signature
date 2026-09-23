@@ -604,16 +604,12 @@ public class Signature {
             "keyId=\"" +
             keyId +
             '\"' +
-            (
-                signatureCreatedTime != null && headers.contains("(created)")
+            (signatureCreatedTime != null && headers.contains("(created)")
                     ? String.format(",created=%d", signatureCreatedTime / 1000L)
-                    : ""
-            ) +
-            (
-                signatureExpiresTime != null && headers.contains("(expires)")
+                    : "") +
+            (signatureExpiresTime != null && headers.contains("(expires)")
                     ? String.format(",expires=%.3f", signatureExpiresTime / 1000.0)
-                    : ""
-            ) +
+                    : "") +
             ",algorithm=\"" +
             alg +
             '\"' +

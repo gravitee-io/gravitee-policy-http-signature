@@ -216,9 +216,9 @@ public enum Base64 {
             l = (byte) (b2 & 0x0f);
             k = (byte) (b1 & 0x03);
 
-            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) ((b1) >> 2 ^ 0xc0);
-            final byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) ((b2) >> 4 ^ 0xf0);
-            final byte val3 = ((b3 & SIGN) == 0) ? (byte) (b3 >> 6) : (byte) ((b3) >> 6 ^ 0xfc);
+            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) (((b1) >> 2) ^ 0xc0);
+            final byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) (((b2) >> 4) ^ 0xf0);
+            final byte val3 = ((b3 & SIGN) == 0) ? (byte) (b3 >> 6) : (byte) (((b3) >> 6) ^ 0xfc);
 
             encodedData[encodedIndex] = lookUpBase64Alphabet[val1];
             //log.debug( "val2 = " + val2 );
@@ -250,7 +250,7 @@ public enum Base64 {
             k = (byte) (b1 & 0x03);
             //log.debug("b1=" + b1);
             //log.debug("b1<<2 = " + (b1>>2) );
-            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) ((b1) >> 2 ^ 0xc0);
+            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) (((b1) >> 2) ^ 0xc0);
             encodedData[encodedIndex] = lookUpBase64Alphabet[val1];
             encodedData[encodedIndex + 1] = lookUpBase64Alphabet[k << 4];
             encodedData[encodedIndex + 2] = PAD;
@@ -261,8 +261,8 @@ public enum Base64 {
             l = (byte) (b2 & 0x0f);
             k = (byte) (b1 & 0x03);
 
-            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) ((b1) >> 2 ^ 0xc0);
-            final byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) ((b2) >> 4 ^ 0xf0);
+            final byte val1 = ((b1 & SIGN) == 0) ? (byte) (b1 >> 2) : (byte) (((b1) >> 2) ^ 0xc0);
+            final byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) (((b2) >> 4) ^ 0xf0);
 
             encodedData[encodedIndex] = lookUpBase64Alphabet[val1];
             encodedData[encodedIndex + 1] = lookUpBase64Alphabet[val2 | (k << 4)];
@@ -333,17 +333,17 @@ public enum Base64 {
                 b3 = base64Alphabet[marker0];
                 b4 = base64Alphabet[marker1];
 
-                decodedData[encodedIndex] = (byte) (b1 << 2 | b2 >> 4);
+                decodedData[encodedIndex] = (byte) ((b1 << 2) | (b2 >> 4));
                 decodedData[encodedIndex + 1] = (byte) (((b2 & 0xf) << 4) | ((b3 >> 2) & 0xf));
-                decodedData[encodedIndex + 2] = (byte) (b3 << 6 | b4);
+                decodedData[encodedIndex + 2] = (byte) ((b3 << 6) | b4);
             } else if (marker0 == PAD) {
                 //Two PAD e.g. 3c[Pad][Pad]
-                decodedData[encodedIndex] = (byte) (b1 << 2 | b2 >> 4);
+                decodedData[encodedIndex] = (byte) ((b1 << 2) | (b2 >> 4));
             } else if (marker1 == PAD) {
                 //One PAD e.g. 3cQ[Pad]
                 b3 = base64Alphabet[marker0];
 
-                decodedData[encodedIndex] = (byte) (b1 << 2 | b2 >> 4);
+                decodedData[encodedIndex] = (byte) ((b1 << 2) | (b2 >> 4));
                 decodedData[encodedIndex + 1] = (byte) (((b2 & 0xf) << 4) | ((b3 >> 2) & 0xf));
             }
             encodedIndex += 3;
