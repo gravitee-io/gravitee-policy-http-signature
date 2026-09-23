@@ -36,11 +36,14 @@ You can use:
 NOTE: Current version of the policy does not support *Digest*, *(request-target)*, *Host* and *Path* header.
 
 
-== Compatibility with APIM
+== Compatibility matrix
 
 |===
-|Plugin version | APIM version
-|1.x            | All supported versions
+| Plugin version | APIM             | Java version
+
+| 2.x            | 4.9.x to latest  | 21
+| 1.6.x to 1.8.x | 3.18.x to latest | 11
+| 1.0.x to 1.5.x | 3.x              | 8
 |===
 
 
