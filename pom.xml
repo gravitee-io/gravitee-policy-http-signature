@@ -36,12 +36,9 @@
 
     <properties>
         <gravitee-bom.version>5.0.0</gravitee-bom.version>
-        <gravitee-gateway.version>3.6.3</gravitee-gateway.version>
         <gravitee-gateway-api.version>1.31.0</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.10.0</gravitee-policy-api.version>
         <gravitee-common.version>1.18.0</gravitee-common.version>
-        <tomitribe-http-signatures.version>1.7</tomitribe-http-signatures.version>
-        <maven-assembly-plugin.version>2.5.5</maven-assembly-plugin.version>
         <!-- Property used by the publication job in CI-->
         <publish-folder-path>graviteeio-apim/plugins/policies</publish-folder-path>
     </properties>
@@ -146,7 +143,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly-plugin.version}</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>
@@ -166,7 +162,6 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>2.11</version>
                 <configuration>
                     <header>com/mycila/maven/plugin/license/templates/APACHE-2.txt</header>
                     <properties>
@@ -197,23 +192,6 @@
                             <goal>check</goal>
                         </goals>
                         <phase>validate</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.hubspot.maven.plugins</groupId>
-                <artifactId>prettier-maven-plugin</artifactId>
-                <version>0.17</version>
-                <configuration>
-                    <nodeVersion>12.13.0</nodeVersion>
-                    <prettierJavaVersion>1.6.1</prettierJavaVersion>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
