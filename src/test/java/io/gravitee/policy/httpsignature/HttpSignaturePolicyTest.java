@@ -182,8 +182,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.isDecodeSignature()).thenReturn(true);
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", true))
             .set(HttpHeaderNames.HOST, "gravitee.io");
 
@@ -219,8 +218,7 @@ public class HttpSignaturePolicyTest {
     public void shouldNotContinueRequestProcessing_invalidFormat() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.AUTHORIZATION);
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpHeaderNames.HOST, "gravitee.io")
             .set(HttpHeaderNames.AUTHORIZATION, "Signature keyId=gravitee,algorithm=hmac-sha1,signature=HU91saJzo6wdLVtS0%2F4VXINpGXM%3D");
 
@@ -240,8 +238,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
 
         String sig = generateSignature("my-passphrase", false);
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpHeaderNames.HOST, "gravitee.io")
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, sig.replaceAll("\"", ""));
 
@@ -261,8 +258,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Arrays.asList(Algorithm.HMAC_SHA256, Algorithm.HMAC_SHA512));
         when(configuration.getSecret()).thenReturn("my-passphrase");
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpHeaderNames.HOST, "gravitee.io")
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
 
@@ -282,9 +278,10 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList("X-Gravitee-Header"));
 
-        HttpHeaders headers = HttpHeaders
-            .create()
-            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+        HttpHeaders headers = HttpHeaders.create().set(
+            HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+            generateSignature("my-passphrase", false)
+        );
         when(request.headers()).thenReturn(headers);
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
@@ -299,9 +296,10 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
 
-        HttpHeaders headers = HttpHeaders
-            .create()
-            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+        HttpHeaders headers = HttpHeaders.create().set(
+            HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+            generateSignature("my-passphrase", false)
+        );
         when(request.headers()).thenReturn(headers);
 
         new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
@@ -317,8 +315,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("my-passphrase");
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
             .set(HttpHeaderNames.HOST, "gravitee.io");
 
@@ -338,9 +335,10 @@ public class HttpSignaturePolicyTest {
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
 
-        HttpHeaders headers = HttpHeaders
-            .create()
-            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false));
+        HttpHeaders headers = HttpHeaders.create().set(
+            HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+            generateSignature("my-passphrase", false)
+        );
 
         when(request.headers()).thenReturn(headers);
 
@@ -357,8 +355,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getSecret()).thenReturn("my-passphrase");
         when(configuration.getClockSkew()).thenReturn(30L);
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
             .set(HttpHeaderNames.HOST, "gravitee.io");
 
@@ -379,8 +376,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("wrong-passphrase");
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignature("my-passphrase", false))
             .set(HttpHeaderNames.HOST, "gravitee.io");
 
@@ -401,8 +397,7 @@ public class HttpSignaturePolicyTest {
         when(configuration.getEnforceHeaders()).thenReturn(Collections.singletonList(HttpHeaderNames.HOST));
         when(configuration.getSecret()).thenReturn("wrong-passphrase");
 
-        HttpHeaders headers = HttpHeaders
-            .create()
+        HttpHeaders headers = HttpHeaders.create()
             .set(
                 HttpHeaderNames.AUTHORIZATION,
                 "Signature keyId=\"key-alias\",created=1612796632,algorithm=\"hmac-sha256\",headers=\"(request-target) host\",signature=\"qREl8Za0cQwFlcCKo5HCdfIf1tFp3m5xS3O0L0+3MM4=\""

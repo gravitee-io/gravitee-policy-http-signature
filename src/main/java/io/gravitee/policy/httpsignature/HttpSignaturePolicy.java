@@ -190,7 +190,10 @@ public class HttpSignaturePolicy {
 
     private boolean enforceAlgorithm(final Signature signature) {
         if (configuration.getAlgorithms() != null && !configuration.getAlgorithms().isEmpty()) {
-            return configuration.getAlgorithms().stream().anyMatch(algorithm -> algorithm.getAlg() == signature.getAlgorithm());
+            return configuration
+                .getAlgorithms()
+                .stream()
+                .anyMatch(algorithm -> algorithm.getAlg() == signature.getAlgorithm());
         }
 
         return true;
@@ -242,7 +245,13 @@ public class HttpSignaturePolicy {
             }
         }
         String newSignature =
-            "Signature " + kv.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).reduce((a, b) -> a + "," + b).get();
+            "Signature " +
+            kv
+                .entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + "," + b)
+                .get();
         return newSignature;
     }
 }
