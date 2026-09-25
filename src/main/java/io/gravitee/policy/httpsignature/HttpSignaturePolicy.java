@@ -27,6 +27,9 @@ import io.gravitee.policy.httpsignature.configuration.HttpSignatureScheme;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,11 @@ public class HttpSignaturePolicy {
     private static final String HTTP_SIGNATURE_INVALID_SIGNATURE = "HTTP_SIGNATURE_INVALID_SIGNATURE";
 
     static final String HTTP_HEADER_SIGNATURE = "Signature";
+
+    // Signature.getHeaders() always lowercases signed header names.
+    private static final String SIGNED_HEADER_DATE = "date";
+    private static final String SIGNED_PSEUDO_HEADER_CREATED = "(created)";
+    private static final String SIGNED_PSEUDO_HEADER_EXPIRES = "(expires)";
 
     /**
      * Policy configuration
@@ -65,7 +73,7 @@ public class HttpSignaturePolicy {
             !enforceAlgorithm(signature) ||
             !enforceHeaders(signature) ||
             !validateHeaders(signature, request) ||
-            !verifySignatureValidityDates(signature) ||
+            !verifySignatureValidityDates(signature, request) ||
             !verifySignature(signature, context, request)
         ) {
             chain.failWith(PolicyResult.failure(HTTP_SIGNATURE_INVALID_SIGNATURE, 401, "Invalid HTTP Signature"));
@@ -125,31 +133,67 @@ public class HttpSignaturePolicy {
     }
 
     /**
-     * Verify the signature is valid with regards to the (created) and (expires) fields.
+     * Verify the signature is valid with regards to the (created) and (expires) fields, or — when
+     * neither is signed — the real 'Date' header, so a client cannot opt out of replay protection
+     * simply by choosing what it signs.
      *
-     * When the '(created)' field is present in the HTTP signature, the '(created)' field
-     * represents the date when the signature has been created.
-     * When the '(expires)' field is present in the HTTP signature, the '(expires)' field
-     * represents the date when the signature expires.
+     * 'created' and 'expires' are only trusted when '(created)' / '(expires)' are part of the signed
+     * headers: the parser reads them from the Signature header whether or not they are signed, so an
+     * unsigned value could otherwise be appended to a captured signature to skip the checks below.
+     *
+     * A signed '(created)' must not be in the future beyond the configured clock skew.
+     * A signed '(expires)' must not be in the past. When '(expires)' is signed, it defines the
+     * validity window chosen by the client; otherwise a signed '(created)' must not be older than
+     * the clock skew, so that a signature with only '(created)' does not live forever.
+     * When neither pseudo-header is signed but the real 'Date' header is, that header's value is
+     * checked against the clock skew instead — it is otherwise never validated, so a signature
+     * covering only 'Date' would be accepted indefinitely.
      */
-    private boolean verifySignatureValidityDates(Signature signature) {
-        if (configuration.getClockSkew() > 0) {
-            if (
-                signature.getSignatureCreationTimeMilliseconds() != null &&
-                signature.getSignatureCreationTimeMilliseconds() > System.currentTimeMillis() + (configuration.getClockSkew() * 1_000)
-            ) {
-                return false;
-            }
+    private boolean verifySignatureValidityDates(final Signature signature, final Request request) {
+        if (configuration.getClockSkew() <= 0) {
+            return true;
+        }
 
-            if (
-                signature.getSignatureExpirationTimeMilliseconds() != null &&
-                signature.getSignatureExpirationTimeMilliseconds() < System.currentTimeMillis()
-            ) {
-                return false;
-            }
+        final long skewMillis = configuration.getClockSkew() * 1_000;
+        final long now = System.currentTimeMillis();
+        final List<String> signedHeaders = signature.getHeaders();
+
+        final Long created = signedHeaders.contains(SIGNED_PSEUDO_HEADER_CREATED) ? signature.getSignatureCreationTimeMilliseconds() : null;
+        final Long expires = signedHeaders.contains(SIGNED_PSEUDO_HEADER_EXPIRES)
+            ? signature.getSignatureExpirationTimeMilliseconds()
+            : null;
+
+        if (created != null && created > now + skewMillis) {
+            return false;
+        }
+
+        if (expires != null) {
+            return expires >= now;
+        }
+
+        if (created != null) {
+            return created >= now - skewMillis;
+        }
+
+        if (signedHeaders.contains(SIGNED_HEADER_DATE)) {
+            return isDateHeaderWithinClockSkew(request, skewMillis, now);
         }
 
         return true;
+    }
+
+    private boolean isDateHeaderWithinClockSkew(final Request request, final long skewMillis, final long now) {
+        final String dateHeader = request.headers().get(HttpHeaderNames.DATE);
+        if (dateHeader == null) {
+            return false;
+        }
+
+        try {
+            final long dateMillis = ZonedDateTime.parse(dateHeader, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli();
+            return dateMillis <= now + skewMillis && dateMillis >= now - skewMillis;
+        } catch (DateTimeParseException ex) {
+            return false;
+        }
     }
 
     private boolean enforceHeaders(final Signature signature) {
