@@ -78,7 +78,7 @@ NOTE: Current version of the policy does not support *Digest*, *(request-target)
 
 .^|clockSkew
 ^.^|-
-|Clock Skew in seconds to prevent replay attacks.
+|Maximum age, in seconds, of a signature, to prevent replay attacks. When `(created)` is signed without `(expires)`, it must be within ±clockSkew seconds of the gateway time; when `(expires)` is signed, it must not be in the past and `(created)` must not be more than clockSkew seconds in the future. When neither is signed but the `Date` header is, the `Date` header must be within ±clockSkew seconds of the gateway time. Replay protection only applies when `Date` or `(created)` is signed (use `enforceHeaders` to require `Date`). `0` disables these checks.
 ^.^| 30
 ^.^| -
 
