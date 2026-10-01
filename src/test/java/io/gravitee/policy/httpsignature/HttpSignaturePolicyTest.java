@@ -370,6 +370,171 @@ public class HttpSignaturePolicyTest {
     }
 
     @Test
+    public void shouldNotContinueRequestProcessing_withClockSkew_staleDateHeader() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getClockSkew()).thenReturn(30L);
+        stubValidSignatureVerification();
+
+        // Signed years ago: a captured request replayed today must not still validate.
+        String staleDate = "Wed, 03 Feb 2021 17:06:35 GMT";
+
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpHeaderNames.DATE, staleDate)
+            .set(
+                HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+                generateSignatureWithHeaders("my-passphrase", Arrays.asList("date"), staleDate)
+            );
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldContinueRequestProcessing_withClockSkew_freshDateHeader() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getSecret()).thenReturn("my-passphrase");
+        when(configuration.getClockSkew()).thenReturn(30L);
+
+        String freshDate = java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.format(
+            java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+        );
+
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpHeaderNames.DATE, freshDate)
+            .set(
+                HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+                generateSignatureWithHeaders("my-passphrase", Arrays.asList("date"), freshDate)
+            );
+
+        when(request.headers()).thenReturn(headers);
+        when(request.method()).thenReturn(HttpMethod.GET);
+        when(request.path()).thenReturn("/my/api");
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, times(1)).doNext(request, response);
+        verify(chain, never()).failWith(any(PolicyResult.class));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_withClockSkew_staleCreatedWithoutExpires() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getClockSkew()).thenReturn(30L);
+        stubValidSignatureVerification();
+
+        // (created) three days ago, no (expires): must not be treated as eternally valid.
+        long staleCreated = System.currentTimeMillis() - java.time.Duration.ofDays(3).toMillis();
+
+        final Signature signature = new Signature(
+            "key-alias",
+            org.tomitribe.auth.signatures.Algorithm.HMAC_SHA256.name(),
+            null,
+            Arrays.asList("(created)")
+        );
+        final Key key = new SecretKeySpec("my-passphrase".getBytes(), "HmacSHA256");
+        final Signer signer = new Signer(key, signature);
+        String compSignature = signer.sign("GET", "/my/api", new HashMap<>(), staleCreated, null).toString();
+
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, compSignature);
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_withClockSkew_staleDateHeader_unsignedCreatedAppended() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getClockSkew()).thenReturn(30L);
+        stubValidSignatureVerification();
+
+        String staleDate = "Wed, 03 Feb 2021 17:06:35 GMT";
+        long nowSeconds = System.currentTimeMillis() / 1000L;
+
+        // A replayed 'Date'-only signature with an unsigned, fresh 'created' appended must not skip the 'Date' check.
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpHeaderNames.DATE, staleDate)
+            .set(
+                HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+                generateSignatureWithHeaders("my-passphrase", Arrays.asList("date"), staleDate) + ",created=" + nowSeconds
+            );
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldNotContinueRequestProcessing_withClockSkew_staleDateHeader_unsignedExpiresAppended() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getClockSkew()).thenReturn(30L);
+        stubValidSignatureVerification();
+
+        String staleDate = "Wed, 03 Feb 2021 17:06:35 GMT";
+        long futureSeconds = System.currentTimeMillis() / 1000L + 3600;
+
+        // A replayed 'Date'-only signature with an unsigned, future 'expires' appended must not skip the 'Date' check.
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpHeaderNames.DATE, staleDate)
+            .set(
+                HttpSignaturePolicy.HTTP_HEADER_SIGNATURE,
+                generateSignatureWithHeaders("my-passphrase", Arrays.asList("date"), staleDate) + ",expires=" + futureSeconds
+            );
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, never()).doNext(request, response);
+        verify(chain, times(1)).failWith(argThat(result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    @Test
+    public void shouldContinueRequestProcessing_withClockSkew_signedExpiresWindowLongerThanSkew() throws IOException {
+        when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
+        when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
+        when(configuration.getClockSkew()).thenReturn(30L);
+        stubValidSignatureVerification();
+
+        // Signed 60s ago with a 5-minute validity window: older than the skew, but still within its own (expires).
+        long nowSeconds = System.currentTimeMillis() / 1000L;
+        long created = (nowSeconds - 60) * 1000L;
+        long expires = (nowSeconds + 240) * 1000L;
+
+        HttpHeaders headers = HttpHeaders.create()
+            .set(HttpHeaderNames.HOST, "gravitee.io")
+            .set(HttpSignaturePolicy.HTTP_HEADER_SIGNATURE, generateSignatureWithCreatedAndExpires("my-passphrase", created, expires));
+
+        when(request.headers()).thenReturn(headers);
+
+        new HttpSignaturePolicy(configuration).onRequest(request, response, context, chain);
+
+        verify(chain, times(1)).doNext(request, response);
+        verify(chain, never()).failWith(any(PolicyResult.class));
+    }
+
+    @Test
     public void shouldNotContinueRequestProcessing_invalidSecret() throws IOException {
         when(configuration.getScheme()).thenReturn(HttpSignatureScheme.SIGNATURE);
         when(configuration.getAlgorithms()).thenReturn(Collections.singletonList(Algorithm.HMAC_SHA256));
@@ -411,6 +576,48 @@ public class HttpSignaturePolicyTest {
 
         verify(chain, never()).doNext(request, response);
         verify(chain, times(1)).failWith(argThat(result -> result.statusCode() == HttpStatusCode.UNAUTHORIZED_401));
+    }
+
+    /**
+     * Stubs everything the signature verification needs, so that a rejection can only come from the
+     * validity date checks. Lenient because those checks reject the request before the stubs are used.
+     */
+    private void stubValidSignatureVerification() {
+        lenient().when(configuration.getSecret()).thenReturn("my-passphrase");
+        lenient().when(request.method()).thenReturn(HttpMethod.GET);
+        lenient().when(request.path()).thenReturn("/my/api");
+    }
+
+    /**
+     * Builds the Signature header by hand so that 'expires' is written as whole seconds, independently of the
+     * default locale used by {@link Signature#toString()}.
+     */
+    private String generateSignatureWithCreatedAndExpires(final String passphrase, final long created, final long expires)
+        throws IOException {
+        final Signature signature = new Signature("key-alias", "hmac-sha256", null, Arrays.asList("(created)", "(expires)"));
+        final Key key = new SecretKeySpec(passphrase.getBytes(), "HmacSHA256");
+        final Signer signer = new Signer(key, signature);
+        final Signature signed = signer.sign("get", "/my/api", new HashMap<>(), created, expires);
+
+        return String.format(
+            "Signature keyId=\"key-alias\",created=%d,expires=%d,algorithm=\"hmac-sha256\",headers=\"(created) (expires)\",signature=\"%s\"",
+            created / 1000L,
+            expires / 1000L,
+            signed.getSignature()
+        );
+    }
+
+    private String generateSignatureWithHeaders(final String passphrase, final java.util.List<String> signedHeaders, final String dateValue)
+        throws IOException {
+        final Signature signature = new Signature("key-alias", "hmac-sha256", null, signedHeaders);
+        final Key key = new SecretKeySpec(passphrase.getBytes(), "HmacSHA256");
+        final Signer signer = new Signer(key, signature);
+
+        final Map<String, String> headers = new HashMap<>();
+        headers.put("Host", "gravitee.io");
+        headers.put("Date", dateValue);
+
+        return signer.sign("GET", "/my/api", headers).toString();
     }
 
     private String generateSignature(final String passphrase, boolean encode) throws IOException {
