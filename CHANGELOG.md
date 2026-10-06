@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/2.0.0...2.0.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* the signature only covers the “date” header and never expires ([bda7126](https://github.com/gravitee-io/gravitee-policy-http-signature/commit/bda7126e4dba9923191368423fd588c4ab8e451c))
+
 # [2.0.0](https://github.com/gravitee-io/gravitee-policy-http-signature/compare/1.8.0...2.0.0) (2026-09-23)
 
 
